@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin'); 
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const CleanPlugin = require('clean-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlPlugin = require('html-webpack-plugin');
 const HtmlIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -32,13 +32,60 @@ module.exports = () => {
                 mo: 'mo-framework/modules'
             }
         },
+        output: {
+            path: path.resolve(__dirname, 'build'),
+            publicPath: '',
+            filename: '[name].js'
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.js$/,
+                    include: path.resolve(__dirname, 'src/app'),
+                    loader: 'babel-loader'
+                },
+                {
+                    test: /\.hbs$/,
+                    loader: 'handlebars-loader'
+                },
+                {
+                    test: /\.less$/,
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        'css-loader',
+                        'less-loader'
+                    ]
+                },
+                {
+                    test: /\.(jpg|png|svg|gif)$/,
+                    loader: 'url-loader',
+                    options: { limit: 50000 }
+                },
+                {
+                    test: /\.(eot|ttf|woff|wav|mp3)$/,
+                    loader: 'file-loader'
+                },
+                {
+                    test: /\.css$/,
+                    use: [
+                        MiniCssExtractPlugin.loader,
+                        'css-loader'
+                    ]
+                },
+                {
+                    test: /jquery.mobile-/,
+                    loader: 'mo-framework/loaders/context-window'
+                }
+            ]
+        },
         plugins: [
-            new CleanWebpackPlugin(), // Updated to new plugin usage
-            new ExtractTextPlugin("[name].css"),
-            new webpack.optimize.SplitChunksPlugin({ // Replacing CommonsChunkPlugin with SplitChunksPlugin
+            new CleanPlugin(['build/']),
+            new MiniCssExtractPlugin({
+                filename: "[name].css"
+            }),
+            new webpack.optimize.SplitChunksPlugin({
                 name: 'vendor',
-                filename: 'vendor.js',
-                minChunks: Infinity // Ensures vendor code is separated
+                filename: 'vendor.js'
             }),
             new CopyWebpackPlugin([{ from: 'src/music/*.wav', to: 'music', flatten: true }]),
             new HtmlPlugin({
@@ -61,43 +108,9 @@ module.exports = () => {
                 'process.env.NODE_ENV': JSON.stringify(NODE_ENV)
             })
         ],
-        output: {
-            path: path.resolve(__dirname, 'build'),
-            publicPath: '',
-            filename: '[name].js'
-        },
-        module: {
-            rules: [{
-                test: /\.js$/,
-                include: path.resolve(__dirname, 'src/app'),
-                loader: 'babel-loader'
-            }, {
-                test: /\.hbs$/,
-                loader: 'handlebars-loader'
-            }, {
-                test: /\.less$/,
-                loader: ExtractTextPlugin.extract({ fallback: 'style-loader', use: 'css-loader!less-loader' })
-            }, {
-                test: /\.(jpg|png|svg|gif)$/,
-                loader: 'url-loader?limit=50000'
-            }, {
-                test: /\.(eot|ttf|woff|wav|mp3)$/,
-                loader: 'file-loader'
-            }, {
-                test: /\.css$/,
-                loader: ExtractTextPlugin.extract({ fallback: 'style-loader', use: 'css-loader' })
-            }, {
-                test: /jquery.mobile-/,
-                loader: 'mo-framework/loaders/context-window'
-            }]
-        },
-        optimization: { // Add optimization settings
-            splitChunks: {
-                chunks: 'all',
-            },
-            minimize: NODE_ENV === 'production', // Enable minimization in production
+        optimization: {
             minimizer: [
-                new UglifyJsPlugin({ // This replaces the optimization in Webpack 3
+                new UglifyJsPlugin({
                     sourceMap: true
                 })
             ]
@@ -120,6 +133,9 @@ module.exports = () => {
 
     } else if (NODE_ENV === 'production') {
         webpackConfig.devtool = false;
+        webpackConfig.plugins.push(
+            new webpack.optimize.ModuleConcatenationPlugin() // This is still valid in Webpack 4
+        );
     }
 
     return webpackConfig;
