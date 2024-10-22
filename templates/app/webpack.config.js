@@ -5,6 +5,7 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const HtmlPlugin = require('html-webpack-plugin');
 const HtmlIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin'); // Use the new plugin
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -24,7 +25,6 @@ module.exports = () => {
                 'node_modules',
                 'src/vendor',
                 'src/styles',
-                // Absolute path is for mo to access user modules.
                 path.resolve(__dirname, 'src/app'),
                 path.resolve(__dirname, 'node_modules')
             ],
@@ -106,8 +106,10 @@ module.exports = () => {
     } else if (NODE_ENV === 'production') {
         webpackConfig.devtool = false;
         webpackConfig.plugins.push(
-            new webpack.optimize.OccurrenceOrderPlugin(),
-            new webpack.optimize.UglifyJsPlugin()
+            new webpack.optimize.ModuleConcatenationPlugin(), // New in Webpack 3
+            new UglifyJsPlugin({ // Replacing the deprecated usage
+                sourceMap: true
+            })
         );
     }
 
