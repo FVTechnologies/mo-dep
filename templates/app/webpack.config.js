@@ -1,11 +1,11 @@
 const path = require('path');
 const webpack = require('webpack');
-const CleanPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin'); 
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const HtmlPlugin = require('html-webpack-plugin');
 const HtmlIncludeAssetsPlugin = require('html-webpack-include-assets-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin'); // Use the new plugin
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 const { NODE_ENV = 'development' } = process.env;
 
@@ -33,17 +33,21 @@ module.exports = () => {
             }
         },
         plugins: [
-            new CleanPlugin(['build/']),
+            new CleanWebpackPlugin(), // Updated to new plugin usage
             new ExtractTextPlugin("[name].css"),
-            new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.js' }),
+            new webpack.optimize.SplitChunksPlugin({ // Replacing CommonsChunkPlugin with SplitChunksPlugin
+                name: 'vendor',
+                filename: 'vendor.js',
+                minChunks: Infinity // Ensures vendor code is separated
+            }),
             new CopyWebpackPlugin([{ from: 'src/music/*.wav', to: 'music', flatten: true }]),
             new HtmlPlugin({
-                template: __dirname + '/src/index.html',
+                template: path.resolve(__dirname, 'src/index.html'),
                 hash: true,
                 inject: 'body'
             }),
             new HtmlPlugin({
-                template: __dirname + '/src/index.html',
+                template: path.resolve(__dirname, 'src/index.html'),
                 hash: true,
                 inject: 'body',
                 filename: 'index-cordova.html'
@@ -58,7 +62,7 @@ module.exports = () => {
             })
         ],
         output: {
-            path: __dirname + '/build',
+            path: path.resolve(__dirname, 'build'),
             publicPath: '',
             filename: '[name].js'
         },
@@ -86,6 +90,17 @@ module.exports = () => {
                 test: /jquery.mobile-/,
                 loader: 'mo-framework/loaders/context-window'
             }]
+        },
+        optimization: { // Add optimization settings
+            splitChunks: {
+                chunks: 'all',
+            },
+            minimize: NODE_ENV === 'production', // Enable minimization in production
+            minimizer: [
+                new UglifyJsPlugin({ // This replaces the optimization in Webpack 3
+                    sourceMap: true
+                })
+            ]
         }
     };
 
@@ -105,12 +120,6 @@ module.exports = () => {
 
     } else if (NODE_ENV === 'production') {
         webpackConfig.devtool = false;
-        webpackConfig.plugins.push(
-            new webpack.optimize.ModuleConcatenationPlugin(), // New in Webpack 3
-            new UglifyJsPlugin({ // Replacing the deprecated usage
-                sourceMap: true
-            })
-        );
     }
 
     return webpackConfig;
