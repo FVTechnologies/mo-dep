@@ -42,6 +42,7 @@ module.exports = () => {
                 {
                     test: /\.js$/,
                     include: path.resolve(__dirname, 'src/app'),
+                    exclude: /node_modules/,
                     loader: 'babel-loader'
                 },
                 {
@@ -109,6 +110,10 @@ module.exports = () => {
             })
         ],
         optimization: {
+            splitChunks: {
+                chunks: 'all',
+            },
+            minimize: NODE_ENV === 'production',
             minimizer: [
                 new UglifyJsPlugin({
                     sourceMap: true
@@ -126,16 +131,11 @@ module.exports = () => {
         webpackConfig.plugins.push(
             new webpack.HotModuleReplacementPlugin()
         );
-
     } else if (NODE_ENV === 'staging') {
         webpackConfig.devtool = 'source-map';
         webpackConfig.output.pathinfo = true;
-
     } else if (NODE_ENV === 'production') {
         webpackConfig.devtool = false;
-        webpackConfig.plugins.push(
-            new webpack.optimize.ModuleConcatenationPlugin() // This is still valid in Webpack 4
-        );
     }
 
     return webpackConfig;
