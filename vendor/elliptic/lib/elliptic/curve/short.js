@@ -505,7 +505,7 @@ function JPoint(curve, x, y, z) {
   if (!this.z.red)
     this.z = this.z.toRed(this.curve.red);
 
-  this.zOne = this.z === this.curve.one;
+  this.zOne = this.z.cmp(this.curve.one) === 0;
 }
 inherits(JPoint, Base.BasePoint);
 

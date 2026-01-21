@@ -75,7 +75,7 @@ cachedProperty(KeyPair, 'messagePrefix', function messagePrefix() {
 });
 
 KeyPair.prototype.sign = function sign(message) {
-  assert(this._secret, 'KeyPair can only verify');
+  assert(this._secret, 'KeyPair can only sign when secret key is present');
   return this.eddsa.sign(message, this);
 };
 

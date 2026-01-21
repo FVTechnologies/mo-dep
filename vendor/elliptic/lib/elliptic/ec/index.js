@@ -242,7 +242,7 @@ EC.prototype.recoverPubKey = function(msg, signature, j, enc) {
   var isYOdd = j & 1;
   var isSecondKey = j >> 1;
   if (r.cmp(this.curve.p.umod(this.curve.n)) >= 0 && isSecondKey)
-    throw new Error('Unable to find sencond key candinate');
+    throw new Error('Unable to find second key candidate');
 
   // 1.1. Let x = r + jn.
   if (isSecondKey)
@@ -268,7 +268,7 @@ EC.prototype.getKeyRecoveryParam = function(e, signature, Q, enc) {
     var Qprime;
     try {
       Qprime = this.recoverPubKey(e, signature, i);
-    } catch (e) {
+    } catch (err) {
       continue;
     }
 

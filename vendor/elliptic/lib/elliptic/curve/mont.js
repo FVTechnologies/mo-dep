@@ -19,6 +19,8 @@ inherits(MontCurve, Base);
 module.exports = MontCurve;
 
 MontCurve.prototype.validate = function validate(point) {
+  if (point.inf || (typeof point.isInfinity === 'function' && point.isInfinity()))
+    return true;
   var x = point.normalize().x;
   var x2 = x.redSqr();
   var rhs = x2.redMul(x).redAdd(x2.redMul(this.a)).redAdd(x);
@@ -161,16 +163,24 @@ Point.prototype.jumlAdd = function jumlAdd() {
 };
 
 Point.prototype.eq = function eq(other) {
+  var thisInf = this.isInfinity();
+  var otherInf = other.isInfinity();
+  if (thisInf || otherInf)
+    return thisInf && otherInf;
   return this.getX().cmp(other.getX()) === 0;
 };
 
 Point.prototype.normalize = function normalize() {
+  if (this.isInfinity())
+    return this;
   this.x = this.x.redMul(this.z.redInvm());
   this.z = this.curve.one;
   return this;
 };
 
 Point.prototype.getX = function getX() {
+  if (this.isInfinity())
+    return null;
   // Normalize coordinates
   this.normalize();
 
