@@ -54,6 +54,11 @@ npm run webapp
 ```
 Tune `webapp/index.html` if needed and upload `webapp` folder to your web hosting.
 
+### Security notes
+This repo includes a local fork of `elliptic` at `vendor/elliptic` to address a known RFC6979
+deterministic k truncation issue. The dependency is pinned in `package.json` via
+`elliptic: file:vendor/elliptic` to override transitive uses.
+
 ### Demo screenshots
 <img src="docs/images/screenshot2.png" width="400" />
 <img src="docs/images/screenshot3.png" width="400" />

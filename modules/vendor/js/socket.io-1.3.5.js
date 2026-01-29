@@ -5190,35 +5190,77 @@ exports.decode = function(qs){
  * @api private
  */
 
-var re = /^(?:(?![^:@]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/;
-
 var parts = [
     'source', 'protocol', 'authority', 'userInfo', 'user', 'password', 'host', 'port', 'relative', 'path', 'directory', 'file', 'query', 'anchor'
 ];
 
 module.exports = function parseuri(str) {
-    var src = str,
-        b = str.indexOf('['),
-        e = str.indexOf(']');
-
-    if (b != -1 && e != -1) {
-        str = str.substring(0, b) + str.substring(b, e).replace(/:/g, ';') + str.substring(e, str.length);
-    }
-
-    var m = re.exec(str || ''),
-        uri = {},
-        i = 14;
+    var src = str || '';
+    var uri = {};
+    var i = parts.length;
 
     while (i--) {
-        uri[parts[i]] = m[i] || '';
+        uri[parts[i]] = '';
     }
 
-    if (b != -1 && e != -1) {
-        uri.source = src;
-        uri.host = uri.host.substring(1, uri.host.length - 1).replace(/;/g, ':');
-        uri.authority = uri.authority.replace('[', '').replace(']', '').replace(/;/g, ':');
-        uri.ipv6uri = true;
+    if (!str) {
+        return uri;
     }
+
+    // Avoid catastrophic backtracking by removing the regex-based parser.
+    if (str.length > 4096) {
+        uri.source = src;
+        return uri;
+    }
+
+    var URLCtor = typeof URL !== 'undefined' ? URL : null;
+    var urlObj = null;
+
+    if (URLCtor) {
+        try {
+            urlObj = new URLCtor(str);
+        } catch (err) {
+            try {
+                urlObj = new URLCtor('http://' + str);
+            } catch (err2) {
+                urlObj = null;
+            }
+        }
+    } else if (typeof document !== 'undefined') {
+        var parser = document.createElement('a');
+        parser.href = str;
+        urlObj = {
+            protocol: parser.protocol,
+            username: '',
+            password: '',
+            hostname: parser.hostname,
+            port: parser.port,
+            host: parser.host,
+            pathname: parser.pathname,
+            search: parser.search,
+            hash: parser.hash
+        };
+    }
+
+    if (!urlObj) {
+        uri.source = src;
+        return uri;
+    }
+
+    uri.source = src;
+    uri.protocol = (urlObj.protocol || '').replace(':', '');
+    uri.user = urlObj.username || '';
+    uri.password = urlObj.password || '';
+    uri.userInfo = uri.user ? uri.user + (uri.password ? ':' + uri.password : '') : '';
+    uri.host = urlObj.hostname || '';
+    uri.port = urlObj.port || '';
+    uri.authority = urlObj.host || '';
+    uri.path = urlObj.pathname || '';
+    uri.query = urlObj.search ? urlObj.search.slice(1) : '';
+    uri.anchor = urlObj.hash ? urlObj.hash.slice(1) : '';
+    uri.relative = (uri.path || '') + (urlObj.search || '') + (urlObj.hash || '');
+    uri.directory = uri.path ? uri.path.replace(/[^\/]*$/, '') : '';
+    uri.file = uri.path ? uri.path.split('/').pop() || '' : '';
 
     return uri;
 };
