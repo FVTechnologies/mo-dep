@@ -76,10 +76,14 @@ define([
             var $el = this.$el;
             $el.show();
             rAF.setup(function () {
-                $el.css(params.css || {
-                    top: env.vkontakte ? 200 - $el.height() / 2 : ($(window).height() - $el.height()) / 2,
-                    left: ($('.ui-page-active').width() - $el.width()) / 2
-                });
+                var defaultCss = {
+                    top: env.vkontakte ? 200 : '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    '-webkit-transform': 'translate(-50%, -50%)'
+                };
+
+                $el.css(params.css || defaultCss);
 
                 $el.removeClass('min');
             });
