@@ -83,7 +83,18 @@ define([
                     '-webkit-transform': 'translate(-50%, -50%)'
                 };
 
-                $el.css(params.css || defaultCss);
+                if (params.css) {
+                    $el
+                        .removeClass('default-positioned')
+                        .css($.extend({
+                            transform: '',
+                            '-webkit-transform': ''
+                        }, params.css));
+                } else {
+                    $el
+                        .addClass('default-positioned')
+                        .css(defaultCss);
+                }
 
                 $el.removeClass('min');
             });
