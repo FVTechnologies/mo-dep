@@ -11,7 +11,8 @@ define([
         isFrozen = false,
         frozenTypes = ['dark', 'award-unlocked'],
         hideTimeout = null,
-        hideCallback = null;
+        hideCallback = null,
+        currentParams = null;
 
     function init ($el) {
         view = new View($el);
@@ -31,6 +32,7 @@ define([
         }
 
         isShown = true;
+        currentParams = params;
 
         hideCallback = params.onHide || null;
 
@@ -70,12 +72,34 @@ define([
         view.clear(function () {
             isShown = false;
             isHiding = false;
+            currentParams = null;
             hideCallback && hideCallback();
 
             if (sequence.length) {
                 show(sequence.shift());
             }
         });
+    }
+
+    // Remove a dialog identified by params.dismissKey, whether it's on screen or still
+    // waiting in the queue. Rejects its dialog() promise so awaiting callers unwind.
+    function dismiss (key) {
+        if (!key) {
+            return;
+        }
+
+        sequence = sequence.filter(function (params) {
+            if (params.dismissKey === key) {
+                params.deferred && params.deferred.reject();
+                return false;
+            }
+            return true;
+        });
+
+        if (isShown && currentParams && currentParams.dismissKey === key) {
+            currentParams.deferred && currentParams.deferred.reject();
+            hide();
+        }
     }
 
     function castParams (params) {
@@ -159,7 +183,8 @@ define([
             type: 'dark',
             modal: true,
             buttons: buttons,
-            hideTimeout: null
+            hideTimeout: null,
+            deferred: deferred
         }, params));
 
         return deferred.promise();
@@ -185,6 +210,7 @@ define([
         blink: blink,
         bubble: bubble,
         dialog: dialog,
+        dismiss: dismiss,
         freeze: freeze,
         unfreeze: unfreeze,
         isShown: function () {
